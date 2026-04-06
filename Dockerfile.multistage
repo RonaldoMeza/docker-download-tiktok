@@ -1,0 +1,32 @@
+# ---------- ETAPA 1: BUILDER ----------
+FROM python:3.11-alpine AS builder
+
+WORKDIR /install
+
+COPY requirements.txt .
+
+# Instalar solo dependencias necesarias
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+
+# ---------- ETAPA 2: FINAL ----------
+FROM python:3.11-alpine
+
+WORKDIR /app
+
+# olo instalar lo mínimo necesario
+RUN apk add --no-cache ffmpeg
+
+# Copiar SOLO las librerías instaladas (no todo el sistema)
+COPY --from=builder /install /usr/local
+
+# Copiar aplicación
+COPY app.py .
+
+# Seguridad: usuario no root
+RUN adduser -D appuser && chown -R appuser /app
+USER appuser
+
+EXPOSE 5000
+
+CMD ["python", "app.py"]
